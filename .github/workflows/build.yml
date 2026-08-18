@@ -1,0 +1,55 @@
+name: Build Windows
+
+# Quando far partire la compilazione automatica:
+#  - ogni volta che qualcosa viene caricato (push) sul branch principale
+#  - ogni volta che si apre/aggiorna una Pull Request
+#  - anche a mano, dal tab "Actions" del repository (workflow_dispatch)
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    # Il computer "in prestito" che GitHub ci dà per compilare: qui chiediamo
+    # una macchina Windows, perché il progetto è pensato per Windows.
+    runs-on: windows-latest
+
+    steps:
+      - name: 1. Scarica il codice del progetto
+        uses: actions/checkout@v4
+
+      - name: 2. Scarica vcpkg (il "gestore librerie" di Microsoft)
+        uses: actions/checkout@v4
+        with:
+          repository: microsoft/vcpkg
+          path: vcpkg
+
+      - name: 3. Prepara vcpkg (lo compila una volta, la prima volta)
+        run: .\vcpkg\bootstrap-vcpkg.bat
+        shell: cmd
+
+      - name: 4. Metti in cache le librerie (velocizza le prossime esecuzioni)
+        uses: actions/cache@v4
+        with:
+          path: |
+            vcpkg/downloads
+            vcpkg/buildtrees
+            build/vcpkg_installed
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+
+      - name: 5. Configura il progetto (CMake legge vcpkg.json e scarica/compila OpenCV, LibRaw, OpenCL)
+        run: >
+          cmake -B build -S .
+          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake
+          -DVCPKG_TARGET_TRIPLET=x64-windows
+
+      - name: 6. Compila il programma
+        run: cmake --build build --config Release
+
+      - name: 7. Salva il programma compilato come "artifact" scaricabile
+        uses: actions/upload-artifact@v4
+        with:
+          name: RawDenoiseBatch-windows
+          path: build/Release/*.exe

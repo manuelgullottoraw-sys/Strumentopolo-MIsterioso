@@ -1,0 +1,8 @@
+# Cartelle generate da CMake e da vcpkg: non vanno mai caricate su GitHub
+build/
+vcpkg/
+vcpkg_installed/
+out/
+*.obj
+*.pdb
+*.ilk

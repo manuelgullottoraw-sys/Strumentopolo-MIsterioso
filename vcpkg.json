@@ -1,0 +1,12 @@
+{
+  "name": "raw-denoise-batch",
+  "version": "0.1.0",
+  "dependencies": [
+    {
+      "name": "opencv4",
+      "features": ["contrib"]
+    },
+    "libraw",
+    "opencl"
+  ]
+}
